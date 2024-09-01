@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facial Recognition Payment System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #000000 50%, #ffd700 50%); /* Black to Gold Gradient */
+            color: #f0f0f0; /* Light grey text for contrast */
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 50px;
+            padding: 30px;
+            background-color: #222222; /* Darker background for the container */
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.7);
+        }
+        .container h1 {
+            color: #ffd700; /* Gold color */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .container p {
+            color: #d3d3d3; /* Light grey color for the paragraph */
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+        .section {
+            text-align: center;
+            margin-top: 20px;
+        }
+        video, canvas {
+            width: 100%;
+            height: auto;
+            border: 2px solid #ffd700; /* Gold border for video and canvas */
+            border-radius: 10px;
+        }
+        button {
+            background-color: #ffd700; /* Gold background */
+            color: #000000; /* Black text */
+            border: none;
+            border-radius: 5px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #e6c500; /* Slightly darker gold on hover */
+            color: #000000; /* Black text on hover */
+            transform: scale(1.05); /* Slightly enlarge button on hover */
+        }
+        .fade-in {
+            animation: fadeIn 2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container fade-in">
+        <h1>Secure Payment System with Facial Recognition</h1>
+        <p>Experience enhanced security during online transactions with our facial recognition technology. Your data is encrypted and protected, ensuring a safe and seamless payment process.</p>
+        
+        <!-- Registration Section -->
+        <div id="registration-section" class="section">
+            <h2>Register</h2>
+            <form id="registration-form">
+                <input type="text" id="register-username" placeholder="Username" required>
+                <input type="password" id="register-password" placeholder="Password" required>
+                <button type="submit">Register</button>
+            </form>
+            <div id="registration-result"></div>
+            <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+        </div>
+
+        <!-- Login Section -->
+        <div id="login-section" class="section" style="display: none;">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <div id="login-result"></div>
+            <p>Don't have an account? <a href="#" id="show-registration">Register here</a></p>
+        </div>
+
+        <!-- Enrollment Section -->
+        <div id="enrollment-section" class="section" style="display: none;">
+            <h2>Enroll Your Face</h2>
+            <button id="enroll-button">Enroll Face</button>
+        </div>
+
+        <!-- Payment Section -->
+        <div id="payment-section" class="section" style="display: none;">
+            <button id="payment-button">Proceed to Payment</button>
+        </div>
+
+        <!-- Video Capture Section -->
+        <div id="video-section" class="section" style="display: none;">
+            <video id="video" autoplay></video>
+            <canvas id="canvas" style="display: none;"></canvas>
+            <button id="capture-button">Capture Photo</button>
+        </div>
+
+        <!-- Submit Section -->
+        <div id="submit-section" class="section" style="display: none;">
+            <button id="submit-button">Submit for Authentication</button>
+        </div>
+
+        <div id="result" class="section mt-3"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const paymentButton = document.getElementById('payment-button');
+    const captureButton = document.getElementById('capture-button');
+    const submitButton = document.getElementById('submit-button');
+    const enrollButton = document.getElementById('enroll-button');
+    const resultDiv = document.getElementById('result');
+    const videoSection = document.getElementById('video-section');
+    const submitSection = document.getElementById('submit-section');
+    const enrollmentSection = document.getElementById('enrollment-section');
+    const paymentSection = document.getElementById('payment-section');
+    const loginForm = document.getElementById('login-form');
+    const loginResultDiv = document.getElementById('login-result');
+    const registrationForm = document.getElementById('registration-form');
+    const registrationResultDiv = document.getElementById('registration-result');
+    const loginSection = document.getElementById('login-section');
+    const registrationSection = document.getElementById('registration-section');
+    const showLoginLink = document.getElementById('show-login');
+    const showRegistrationLink = document.getElementById('show-registration');
+
+    // Handle user registration
+    registrationForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('register-username').value;
+        const password = document.getElementById('register-password').value;
+
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            
+            const result = await response.json();
+
+            if (response.ok) {
+                registrationResultDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+                registrationSection.style.display = 'none';
+                loginSection.style.display = 'block';
+            } else {
+                registrationResultDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+            }
+        } catch (error) {
+            registrationResultDiv.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+        }
+    });
+
+    // Handle user login
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                loginResultDiv.innerHTML = `<div class="alert alert-success">${result.message}</div>`;
+                loginSection.style.display = 'none';
+                enrollmentSection.style.display = 'block';
+            } else {
+                loginResultDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+            }
+        } catch (error) {
+            loginResultDiv.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+        }
+    });
+
+    // Switch to registration section
+    showRegistrationLink.addEventListener('click', () => {
+        loginSection.style.display = 'none';
+        registrationSection.style.display = 'block';
+    });
+
+    // Switch to login section
+    showLoginLink.addEventListener('click', () => {
+        registrationSection.style.display = 'none';
+        loginSection.style.display = 'block';
+    });
+
+    // Show video section for face enrollment
+    enrollButton.addEventListener('click', () => {
+        enrollmentSection.style.display = 'none';
+        paymentSection.style.display = 'none';
+        videoSection.style.display = 'block';
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => console.error('Error accessing webcam: ', err));
+    });
+
+    // Capture the photo from the video stream
+    captureButton.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        submitSection.style.display = 'block'; // Show the submit button after capturing photo
+    });
+
+    // Submit the captured photo for enrollment
+    submitButton.addEventListener('click', async () => {
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'capture.png');
+
+            try {
+                const response = await fetch('/enroll', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok && result.message === "Enrollment successful!") {
+                    resultDiv.innerHTML = `<div class="alert alert-success">Enrollment Successful! You can now proceed to payment.</div>`;
+                    paymentSection.style.display = 'block';
+                    videoSection.style.display = 'none'; // Hide video section
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+            }
+        }, 'image/png');
+    });
+
+    // Show video section for payment
+    paymentButton.addEventListener('click', () => {
+        paymentButton.style.display = 'none';
+        videoSection.style.display = 'block';
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => console.error('Error accessing webcam: ', err));
+    });
+
+    // Capture the photo for authentication
+    captureButton.addEventListener('click', () => {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        submitSection.style.display = 'block'; // Show the submit button after capturing photo
+    });
+
+    // Submit the captured photo for authentication
+    submitButton.addEventListener('click', async () => {
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'capture.png');
+
+            try {
+                const response = await fetch('/authenticate', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok && result.message === "Face recognized!") {
+                    resultDiv.innerHTML = `<div class="alert alert-success">Authentication Successful! Proceeding with Payment...</div>`;
+                    // Simulate payment processing delay
+                    setTimeout(() => {
+                        alert("Payment Processed Successfully!");
+                        location.reload(); // Reload to reset
+                    }, 2000);
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">${result.message}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+            }
+        }, 'image/png');
+    });
+});
+
+    </script>
+</body>
+</html>
